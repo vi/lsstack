@@ -9,5 +9,6 @@ clean:
 distclean: clean
 	rm -f *~
 
+# just for checkinstall
 install:
 	install -g staff -o root lsstack /usr/bin/

@@ -1,0 +1,5 @@
+lsstack
+*.deb
+.*.swp
+a
+backup-*

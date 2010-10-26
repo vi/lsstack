@@ -1,5 +1,3 @@
-#define false 0
-#include <stddef.h>
 /*
 
 This program is free software; you can redistribute it and/or modify
@@ -47,11 +45,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  */
 
 #include <bfd.h>
 
+#include <stddef.h>
+#include <unistd.h> 
+#include <fcntl.h>
+
+#ifndef false
+#define false 0
+#endif
+
 static int verbose_option = 0;
 static int debug_option = 0;
+static int execute_option = 0;
+static int period_option = 0;
 
 static int wait_loops = 20;
-static int wait_time = 100;
+static int wait_time = 1;
+static const char* append_file = NULL;
 
 static int pointer_size = 4; /* DBDB there has to be an official place to get this from */
 
@@ -162,8 +171,8 @@ static int detatch_target(process_info *pi)
 		}
 	}
 	if (debug_option) printf("Detaching from target...\n");
-	ret = ptrace(PTRACE_CONT, pi->pid, 1, 0);
-	if (debug_option) printf("ptrace(PTRACE_CONT) returned: %d\n", ret);
+	ret = ptrace(PTRACE_DETACH, pi->pid, 0, 0);
+	if (debug_option) printf("ptrace(PTRACE_DETACH) returned: %d\n", ret);
 	return ret;
 }
 
@@ -875,7 +884,7 @@ static void fatal(char* s)
 
 static void usage()
 {
-	printf("lsstack: [-v] [-D] <pid>\n");
+	printf("lsstack: [-v] [-D] [-p peridod_in_ms] [-o file_to_append] {<pid> | -e program arguments}\n");
 	exit(1);
 }
 
@@ -895,18 +904,49 @@ int main(int argc, char** argv)
 			case 'D':
 				debug_option = 1;
 				break;
+			case 'e':
+				execute_option = 1;
+				break;
+			case 'p':
+				++option_position;
+				period_option = atoi(argv[option_position]);
+				break;
+			case 'o':
+				++option_position;
+				append_file = argv[option_position];
+				break;
 			default:
 				usage();
 				break;
 		}
 		option_position++;
+		if(execute_option) {
+		    break;
+		}
 	}
-	if (option_position != (argc-1) ) {
-		usage();
+	if (execute_option) {
+	    pid = fork();
+	    if (pid) {
+		execvp(argv[option_position], argv+option_position);
+		return 1;
+	    } else {
+		pid = getppid();
+		msleep(1);
+	    }
+	} else {
+	    if (option_position != (argc-1) ) {
+		    usage();
+	    }
+	    pid = atoi(argv[option_position]);
+	    if (0 == pid) {
+		    usage();
+	    }
 	}
-	pid = atoi(argv[option_position]);
-	if (0 == pid) {
-		usage();
+
+	if (append_file) {
+	    close(1);
+	    int fd = open(append_file, O_WRONLY|O_APPEND|O_CREAT, 0666);
+	    dup2(fd, 1);
 	}
 	
 	if (debug_option) {
@@ -920,11 +960,15 @@ int main(int argc, char** argv)
 		exit(1);
 	}
 	
+here_we_go_in_polling_mode:
+
 	/* See if we can attach to the target */
 	ret = attach_target(pid);
 	
 	if (ret) {
-		fprintf(stderr,"Failed to attach to the target process: %s\n", strerror(ret) );
+		if(!period_option) {
+		    fprintf(stderr,"Failed to attach to the target process: %s\n", strerror(ret) );
+		}
 		exit(1);
 	}
 	
@@ -944,6 +988,11 @@ int main(int argc, char** argv)
 	pi_free(pi);
 	
 	if (debug_option) printf("Detatched from target process\n");
+
+	if(period_option) {
+	    msleep(period_option);
+	    goto here_we_go_in_polling_mode;
+	}
 	
 	return 0;
 }
