@@ -1,0 +1,23 @@
+
+lsstack --- a "pstack" for linux, which works*
+
+this is the first public release of lsstack, please post
+questions and bug reports on the sourcceforge site
+(http://sourceforge.net/projects/lsstack/)
+
+Build instructions:
+
+make
+
+Install instructions:
+
+cp lsstack /usr/local/bin
+
+(real install process and rpm building to follow in a future release)
+
+
+lsstack -D emits copious debugging output.
+
+
+---
+*There are some bugs in lsstack, hopefully to be fixed soon.
