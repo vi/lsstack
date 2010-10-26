@@ -1,3 +1,15 @@
+Enhanced lsstack with output to file, periodic polling and starting processees right from lsstack.
+
+Example:
+
+for((;;)) {
+    lsstack -p 10 -o qqq.stack -e ./qqq arg1 arg2
+}
+
+will execute qqq repeatably, appending backtraces to qqq.stack every 10 milliseconds.
+
+
+----
 
 lsstack --- a "pstack" for linux, which works*
 
