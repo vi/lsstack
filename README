@@ -32,4 +32,6 @@ lsstack -D emits copious debugging output.
 
 
 ---
-*There are some bugs in lsstack, hopefully to be fixed soon.
+*There are some bugs in lsstack, hopefully to be fixed <s>soon</s>.
+
+(in reality I forgot that I even wrote that)
